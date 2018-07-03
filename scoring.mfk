@@ -1,0 +1,130 @@
+
+
+// TODO: is this fair?
+array scores = @word_be [
+	0,
+	$0001, // 1p
+	$0003, // 2p
+	$0010, // 3oak
+	$0020, // str
+	$0050, // flu
+	$0100, // fuh
+	$0300, // 4oak
+	$1000, // stfl
+	$1000  // 5oak
+]
+
+array text = [
+	"nothing         " scr,
+	"one pair        " scr,
+	"two pairs       " scr,
+	"three of a kind " scr,
+	"straight        " scr,
+	"flush           " scr,
+	"full house      " scr,
+	"four of a kind  " scr,
+	"straight flush  " scr,
+	"five of a kind  " scr
+]
+
+byte animation_countdown
+const word hand_message_offset = 144 // TODO
+long score
+long hi_score
+word fuel
+const byte max_fuel_hi = $23
+
+void check_and_process_hand() {
+	if hand_size < 5 { return }
+	byte type
+	type = get_hand_type()
+	if type != 0 {
+		play_sound(snd_jingle.addr)
+	}
+	type <<= 1
+	score +'= scores[type]:scores[type+1]
+	display_score()
+	fuel.hi += type
+	if fuel.hi > max_fuel_hi { fuel.hi = max_fuel_hi }
+	animation_countdown = 100
+	type <<= 3
+	byte i
+	for i,0,paralleluntil,16 {
+		screen[hand_message_offset+i] = text[i+type]
+		c64_color_ram[hand_message_offset+i] = white
+	}
+	hand_size = 0
+}
+
+byte game_over_message_offset
+
+void animate_hand_color() {
+	byte i
+	byte c
+	if animation_countdown == 0 {
+		if is_game_over != 0 {
+			game_over_message_offset += 16			
+			game_over_message_offset &= $1f
+			for i,0,paralleluntil,16 {
+				screen[hand_message_offset+i] = txt_game_over[game_over_message_offset+i]
+				c64_color_ram[hand_message_offset+i] = red
+			}
+			animation_countdown = 100
+			if o_types[0] >= t_explosion_last {
+				o_types[0] = 0
+			} else if o_types[0] != 0 {
+				o_types[0] += 1
+			}
+		} else {
+			for i,0,paralleluntil,16 {
+				screen[hand_message_offset+i] = 32
+			}
+			if hand_size == 0 {
+				for i,0,paralleluntil,5 {
+					clear_card_on_screen(i)
+				}
+			}
+		}
+	} else {
+		if animation_countdown & 16 == 0 {
+			c = yellow
+		} else {
+			c = red
+		}
+		for i,0,paralleluntil,16 {
+			c64_color_ram[hand_message_offset+i] = c
+		}
+	}
+}
+
+void put_dec_byte(byte at, byte b) {
+	score_area[at+1] = (b & $f) | $30
+	score_area[at] = ((b >> 4) & $f) | $30
+}
+
+void display_score() {
+	put_dec_byte(6, score.b0)
+	put_dec_byte(4, score.b1)
+	put_dec_byte(2, score.b2)
+	put_dec_byte(0, score.b3)
+}
+
+void display_fuel() {
+	byte i
+	for i,0,parallelto,max_fuel_hi {
+		c64_color_ram[i] = yellow + 8 // multicolour w/white
+		if i < fuel.hi {
+			screen[i] = $1f
+		} else {
+			screen[i] = ' ' scr
+		}
+	}
+	if fuel != 0 {
+		screen[fuel.hi] = $1b + (fuel.lo >> 6)
+	}
+}
+
+array txt_game_over = [
+	"fire to restart " scr,
+	"game over       " scr	
+]

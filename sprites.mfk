@@ -1,0 +1,437 @@
+void copy_sprites() {
+	byte i
+	for i,0,paralleluntil,160 {
+		bike_sprite[i] = sprite_bike_data[i]
+		bike_sprite[i+160] = sprite_bike_data[i+160]
+	}
+}
+
+void draw_card_to_sprite(byte sprite_pointer, byte card) {
+	pointer source
+	pointer target
+	byte i
+	target = sprite_pointer
+	target <<= 6
+	target += $8000
+	target[0] = 0q0222
+	target[1] = 0q2222
+	target[2] = 0q2220
+	target[3] = 0q2333
+	target[4] = 0q3333
+	target[5] = 0q3332
+	target[54] = 0q2333
+	target[55] = 0q3333
+	target[56] = 0q3332
+	target[57] = 0q0222
+	target[58] = 0q2222
+	target[59] = 0q2220
+	target[60] = 0
+	target[61] = 0
+	target[62] = 0
+	
+	if card == 0 {
+		target += 6
+		for i,0,paralleluntil,24 {
+			target[i] = sprite_reverse_data[i]
+		}
+		target += 24
+		for i,0,paralleluntil,24 {
+			target[i] = sprite_reverse_data[i]
+		}	
+	} else {		
+		target += 6
+		source = (card >> 2) & 0xf
+		source.lo *= 3
+		source <<= 3
+		source += sprite_rank_data
+		for i,0,paralleluntil,24 {
+			target[i] = source[i]
+		}
+		
+		target += 24
+		source = (card & 3)
+		source.lo *= 3
+		source <<= 3
+		source += sprite_suit_data
+		for i,0,paralleluntil,24 {
+			target[i] = source[i]
+		}	
+	}
+}
+const word card_offset = 41
+const pointer card_screen_start = screen.addr + card_offset
+const pointer card_colour_start = $d800 + card_offset
+
+void draw_card_to_screen(byte position, byte card) { // position <= 31
+	position <<= 2
+	card_screen_start[position+0] = $f0
+	card_screen_start[position+1] = $f1
+	card_screen_start[position+2] = $f2
+	card_screen_start[position+200] = $f4
+	card_screen_start[position+201] = $f5
+	card_screen_start[position+202] = $f6
+	byte ch
+	ch = ((card & $3c) << 1) | $80
+	card_screen_start[position+40] = ch
+	card_screen_start[position+41] = ch | 1
+	card_screen_start[position+42] = ch | 2
+	card_screen_start[position+80] = ch | 4
+	card_screen_start[position+81] = ch | 5
+	card_screen_start[position+82] = ch | 6
+	ch = ((card & 3) << 5) | $83
+	card_screen_start[position+120] = ch
+	card_screen_start[position+121] = ch | $04
+	card_screen_start[position+122] = ch | $08
+	card_screen_start[position+160] = ch | $10
+	card_screen_start[position+161] = ch | $14
+	card_screen_start[position+162] = ch | $18
+	ch = ((card & 1) << 1) | 8
+	card_colour_start[position+0] = ch
+	card_colour_start[position+1] = ch
+	card_colour_start[position+2] = ch
+	card_colour_start[position+40] = ch
+	card_colour_start[position+41] = ch
+	card_colour_start[position+42] = ch
+	card_colour_start[position+80] = ch
+	card_colour_start[position+81] = ch
+	card_colour_start[position+82] = ch
+	card_colour_start[position+120] = ch
+	card_colour_start[position+121] = ch
+	card_colour_start[position+122] = ch
+	card_colour_start[position+160] = ch
+	card_colour_start[position+161] = ch
+	card_colour_start[position+162] = ch
+	card_colour_start[position+200] = ch
+	card_colour_start[position+201] = ch
+	card_colour_start[position+202] = ch
+	
+}
+
+void clear_card_on_screen(byte position) {
+	byte i
+	position <<= 2
+	for i,0,paralleluntil,positions_to_clear.length {
+		card_screen_start[position+positions_to_clear[i]] = 32
+	}
+}
+
+array positions_to_clear = [
+	0,1,2,
+	40,41,42,
+	80,81,82,
+	120,121,122,
+	160,161,162,
+	200,201,202
+]
+
+
+void build_sprite_freezing_charset() {
+	byte i
+	byte j
+	byte b
+	pointer source
+	pointer target
+	
+	target = charset.addr + ($f0 * 8)
+	for i,0,until,64 {
+		charset[($00f0 * 8) + i] = 0
+	}
+	charset[($00f0 * 8) + $06] = 0q3111
+	charset[($00f0 * 8) + $07] = 0q3111
+	charset[($00f0 * 8) + $0e] = 0q1111
+	charset[($00f0 * 8) + $0F] = 0q1111
+	charset[($00f0 * 8) + $16] = 0q1113
+	charset[($00f0 * 8) + $17] = 0q1113
+	charset[($00f0 * 8) + $20] = 0q3111
+	charset[($00f0 * 8) + $21] = 0q3111
+	charset[($00f0 * 8) + $28] = 0q1111
+	charset[($00f0 * 8) + $29] = 0q1111
+	charset[($00f0 * 8) + $30] = 0q1113
+	charset[($00f0 * 8) + $31] = 0q1113
+	
+	charset[($00f0 * 8) + $04] = 0q0333
+	charset[($00f0 * 8) + $05] = 0q0333
+	charset[($00f0 * 8) + $0c] = 0q3333
+	charset[($00f0 * 8) + $0d] = 0q3333
+	charset[($00f0 * 8) + $14] = 0q3330
+	charset[($00f0 * 8) + $15] = 0q3330
+	charset[($00f0 * 8) + $22] = 0q0333
+	charset[($00f0 * 8) + $23] = 0q0333
+	charset[($00f0 * 8) + $2a] = 0q3333
+	charset[($00f0 * 8) + $2b] = 0q3333
+	charset[($00f0 * 8) + $32] = 0q3330
+	charset[($00f0 * 8) + $33] = 0q3330
+	
+	for j,0,paralleluntil,2 {
+		target = charset.addr + ($80 * 8)
+		if j != 0 {
+			target.lo += 1
+		}
+		source = sprite_rank_data.addr
+		for i,0,until,13 {
+			for b,0,paralleluntil,char_offsets.length {
+				target[char_offsets[b]] = source[b] ^ $55
+			}
+			target += 32
+			source += 12
+			for b,0,paralleluntil,char_offsets.length {
+				target[char_offsets[b]] = source[b] ^ $55
+			}
+			target += 32
+			source += 12
+		}
+	}
+	
+	for j,0,paralleluntil,2 {
+		target = charset.addr + ($83 * 8)
+		if j != 0 {
+			target.lo += 1
+		}
+		source = sprite_suit_data.addr
+		for i,0,until,4 {
+			for b,0,paralleluntil,char_offsets2.length {
+				target[char_offsets2[b]] = source[b] ^ $55
+			}
+			target += 128
+			source += 12
+			for b,0,paralleluntil,char_offsets2.length {
+				target[char_offsets2[b]] = source[b] ^ $55
+			}
+			target += 128
+			source += 12
+		}
+	}
+}
+
+array char_offsets = [
+	0,8,16,
+	2,10,18,
+	4,12,20,
+	6,14,22
+]
+array char_offsets2 = [
+	0,32,64,
+	2,34,66,
+	4,36,68,
+	6,38,70
+]
+
+// frozen card looks like this:
+// F0 F1 F2
+// 80 81 82 (for 2) E0 E1 E2 (for K)
+// 84 85 86 (for 2) E4 E5 E6 (for K)
+// 83 87 8B (for S) E3 E7 EB (for D)
+// 93 97 9B (for S) F3 F7 FB (for D)
+// F4 F5 F6
+
+array sprite_rank_data = [
+	//2
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3223, 0q3332,
+	0q2332, 0q2333, 0q3332,
+	0q2322, 0q3333, 0q3332,
+	0q2322, 0q2222, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//3
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q2223, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//4
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3222, 0q3332,
+	0q2333, 0q2222, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q2222, 0q2332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//5
+	0q2322, 0q2222, 0q3332,
+	0q2322, 0q3333, 0q3332,
+	0q2322, 0q2223, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//6
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3333, 0q3332,
+	0q2322, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//7
+	0q2322, 0q2222, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2333, 0q3223, 0q3332,
+	0q2333, 0q2233, 0q3332,
+	0q2333, 0q2233, 0q3332,
+	0q2333, 0q2233, 0q3332,
+	0q2333, 0q2233, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//8
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//9
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2222, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//10
+	0q2322, 0q3322, 0q2332,
+	0q2322, 0q3223, 0q2232,
+	0q2322, 0q3223, 0q2232,
+	0q2322, 0q3223, 0q2232,
+	0q2322, 0q3223, 0q2232,
+	0q2322, 0q3223, 0q2232,
+	0q2322, 0q3322, 0q2332,
+	0q2333, 0q3333, 0q3332,
+	//J
+	0q2333, 0q2222, 0q3332,
+	0q2333, 0q3223, 0q3332,
+	0q2333, 0q3223, 0q3332,
+	0q2333, 0q3223, 0q3332,
+	0q2333, 0q3223, 0q3332,
+	0q2322, 0q3223, 0q3332,
+	0q2332, 0q2233, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//Q
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2333, 0q3222, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	// K
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3223, 0q3332,
+	0q2322, 0q2233, 0q3332,
+	0q2322, 0q2333, 0q3332,
+	0q2322, 0q2233, 0q3332,
+	0q2322, 0q3223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	//A
+	0q2333, 0q2233, 0q3332,
+	0q2332, 0q2223, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q2222, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2322, 0q3322, 0q3332,
+	0q2333, 0q3333, 0q3332,
+	0	
+]
+array sprite_suit_data = [
+	//spades
+	0q2333, 0q3333, 0q3332,
+	0q2333, 0q3323, 0q3332,
+	0q2333, 0q3222, 0q3332,
+	0q2333, 0q2222, 0q2332,
+	0q2332, 0q2222, 0q2232,
+	0q2332, 0q2222, 0q2232,
+	0q2333, 0q3222, 0q3332,
+	0q2333, 0q2222, 0q2332,
+	//hearts
+	0q2333, 0q3333, 0q3332,
+	0q2333, 0q2232, 0q2332,
+	0q2332, 0q2222, 0q2232,
+	0q2332, 0q2222, 0q2232,
+	0q2332, 0q2222, 0q2232,
+	0q2333, 0q2222, 0q2332,
+	0q2333, 0q3222, 0q3332,
+	0q2333, 0q3323, 0q3332,
+	//clubs
+	0q2333, 0q3333, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q2233, 0q2232,
+	0q2333, 0q2233, 0q2232,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3322, 0q3332,
+	0q2333, 0q3222, 0q2332,
+	//diamonds
+	0q2333, 0q3333, 0q3332,
+	0q2333, 0q3323, 0q3332,
+	0q2333, 0q3222, 0q3332,
+	0q2333, 0q2222, 0q2332,
+	0q2332, 0q2222, 0q2232,
+	0q2333, 0q2222, 0q2332,
+	0q2333, 0q3222, 0q3332,
+	0q2333, 0q3323, 0q3332,
+	0
+	
+]
+
+array sprite_reverse_data = [
+	0q2332, 0q3232, 0q3232,
+	0q2323, 0q2323, 0q2332,
+	0q2332, 0q3232, 0q3232,
+	0q2323, 0q2323, 0q2332,
+	0q2332, 0q3232, 0q3232,
+	0q2323, 0q2323, 0q2332,
+	0q2332, 0q3232, 0q3232,
+	0q2323, 0q2323, 0q2332
+]
+
+array sprite_bike_data = [ // TODO.byte 
+
+// normal spaceship
+0q0000, 0q0000, 0q0000,
+0q0000, 0q0000, 0q0000,
+0q0000, 0q0000, 0q0000,
+
+0q0000, 0q0000, 0q0000,
+0q0000, 0q0000, 0q0000,
+0q1111, 0q1000, 0q0000,
+
+0q0133, 0q3100, 0q0000,
+0q0012, 0q2210, 0q0000,
+0q0001, 0q2221, 0q1110,
+
+0q0001, 0q1111, 0q2211,
+0q0003, 0q3333, 0q1221,
+0q0001, 0q1111, 0q2211,
+
+0q0001, 0q2221, 0q1110,
+0q0012, 0q2210, 0q0000,
+0q0133, 0q3100, 0q0000,
+
+0q1111, 0q1000, 0q0000,
+0q0000, 0q0000, 0q0000,
+0q0000, 0q0000, 0q0000,
+
+0q0000, 0q0000, 0q0000,
+0q0000, 0q0000, 0q0000,
+0q0000, 0q0000, 0q0000,
+
+$8f,
+
+// explosion:
+file("explosion.bin", 0, 255)
+
+
+
+]

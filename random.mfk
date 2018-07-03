@@ -1,0 +1,56 @@
+word rand_seed
+
+asm byte rand() {
+	ldx #8   
+	lda rand_seed+0
+__rand_loop:
+	asl     
+	rol rand_seed+1
+	bcc __no_eor
+	eor #$2D 
+__no_eor:
+	dex
+	bne __rand_loop
+	sta rand_seed+0
+	? rts
+}
+
+inline void init_rand_seed() {
+	poke($D40E, $ff)
+	poke($D40F, $ff)
+	poke($D412, $80)
+	while vic_raster != $70 {}
+	rand_seed.hi = peek($D41B)
+	while vic_raster != $40 {}
+	rand_seed.lo = peek($D41B)
+}
+
+byte get_random_card() {
+	byte card
+	do {
+		card = (rand() & 0x3f) | $80
+	} while card & ($F << 2) >= $D << 2 || card_exists(card) != 0
+	return card
+}
+
+byte last_lane
+
+byte get_random_lane() {
+	byte lane
+	do {
+		lane = rand() & 3
+	} while lane == last_lane || lane > max_lane
+	last_lane = lane
+	return lane
+}
+
+inline byte card_exists(byte card) {
+	byte i
+	for i,0,paralleluntil,8 {
+		if o_types[i] == card { return 1 }
+	}
+	for i,0,paralleluntil,hand_size {
+		if hand[i] == card { return 1 }
+	}
+	return 0
+}

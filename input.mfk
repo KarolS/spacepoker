@@ -1,0 +1,34 @@
+sbyte input_dx
+sbyte input_dy
+byte input_btn
+
+
+void handle_input() {
+	input_dx = 0
+	input_dy = 0
+	input_btn = 0
+	read_joy2()
+	read_joy1()
+}
+
+void read_joy2() {
+	poke($dc02, 0)
+	byte value
+	value = peek($dc00)
+	if value & 1 == 0 { input_dy -= 1 } 
+	if value & 2 == 0 { input_dy += 1 } 
+	if value & 4 == 0 { input_dx -= 1 } 
+	if value & 8 == 0 { input_dx += 1 } 
+	if value & 16 == 0 { input_btn += 1 } 
+}
+
+void read_joy1() {
+	poke($dc03, 0)
+	byte value
+	value = peek($dc01)
+	if value & 1 == 0 { input_dy -= 1 } 
+	if value & 2 == 0 { input_dy += 1 } 
+	if value & 4 == 0 { input_dx -= 1 } 
+	if value & 8 == 0 { input_dx += 1 } 
+	if value & 16 == 0 { input_btn += 1 } 
+}

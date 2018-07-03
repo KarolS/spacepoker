@@ -1,0 +1,163 @@
+import poker
+import objects
+import scoring
+import sprites
+import input
+import empty_screen
+import state
+import random
+import title_screen
+import sound
+
+array charset[$800]@$b800
+
+byte restart_game
+
+void main () {
+	init_rand_seed()
+	hi_score = 0
+	asm {	
+		sei
+		lda #$33
+		sta 1
+		ldx #0
+		looptyloop:
+		lda $d000,x
+		sta $0000+charset,x
+		lda $d100,x
+		sta $0100+charset,x
+		inx
+		bne looptyloop
+		lda #$36
+		sta 1
+		cli
+	}
+	byte i
+	for i,0,paralleluntil,$80 {
+		charset[($0060 * 8)+i] = 0
+	}
+	charset[$0060 * 8] = 1	
+	for i,0,paralleluntil,fuel_bar.length {
+		charset[($001B * 8)+i] = fuel_bar[i]
+	}
+	build_sprite_freezing_charset()
+	// build_chunky_pixel_charset()
+	// Charset: 
+	// $00-$1A - normal
+	// $1B-$1F - fuel bar
+	// $20-$3F - normal
+	// $40-$5F - unused
+	// $60-$6F - starfield
+	// $70-$7F - chunky pixels (if enabled)
+	// $80-$FB - card tiles
+	// $FC-$FF - unused
+	
+	vic_bank_8000()
+	vic_mem = $DE
+	vic_border = black
+	vic_spr_ena = 0
+	vic_spr_mcolor = $ff
+	vic_spr_color1 = light_grey
+	vic_spr_color2 = white
+	vic_bg_color0 = dark_grey
+	vic_bg_color2 = white
+	vic_cr2 |= $10
+	copy_sprites()
+	
+	while true {
+		show_title_screen()			
+		init_game()	
+		restart_game = 0		
+		while restart_game == 0 {
+			update_screen()
+			wait_frame()
+			sound_engine_frame()
+		}
+	}
+}
+
+array fuel_bar = [
+
+	//tip0
+	0q0000,
+	0q0000,
+	0q3000,
+	0q3000,
+	0q3000,
+	0q3000,
+	0q0000,
+	0q0000,
+	//tip1
+	0q0000,
+	0q3000,
+	0q2300,
+	0q3300,
+	0q3300,
+	0q2300,
+	0q3000,
+	0q0000,
+	//tip2
+	0q0000,
+	0q3300,
+	0q2230,
+	0q3330,
+	0q3330,
+	0q2230,
+	0q3300,
+	0q0000,
+	//tip3
+	0q0000,
+	0q3330,
+	0q2223,
+	0q3333,
+	0q3333,
+	0q2223,
+	0q3330,
+	0q0000,
+	//body
+	0q0000,
+	0q3333,
+	0q2222,
+	0q3333,
+	0q3333,
+	0q2222,
+	0q3333,
+	0q0000
+	
+]
+
+void build_chunky_pixel_charset() {	
+	pointer p
+	p = charset.addr + $0070*8
+	byte i
+	byte pattern
+	byte offset
+	offset = 0
+	for i,0,until,15 {
+		pattern = 0
+		if i & 8 != 0 { pattern |= $f0 }
+		if i & 4 != 0 { pattern |= $0f }
+		charset[$0070*8 + offset + 0] = pattern
+		charset[$0070*8 + offset + 1] = pattern
+		charset[$0070*8 + offset + 2] = pattern
+		charset[$0070*8 + offset + 3] = pattern
+		pattern = 0
+		if i & 2 != 0 { pattern |= $f0 }
+		if i & 1 != 0 { pattern |= $0f }
+		charset[$0070*8 + offset + 4] = pattern
+		charset[$0070*8 + offset + 5] = pattern
+		charset[$0070*8 + offset + 6] = pattern
+		charset[$0070*8 + offset + 7] = pattern
+		offset += 8
+	}
+}
+
+void wait_frame() {
+	while vic_raster != $ff {}
+}
+
+
+
+
+
+

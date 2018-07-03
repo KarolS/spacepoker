@@ -1,0 +1,37 @@
+import sound
+import input
+
+void main() {
+	init_sound()
+	sound_countdown = off
+	while true {
+		wait_frame()
+		sound_engine_frame()
+		if sound_countdown == off {
+			vic_border = light_blue
+			handle_input() 
+			if input_dx < 0 {
+				vic_border = red
+				play_sound(snd_explosion.addr)
+			}
+			if input_dx > 0 {
+				vic_border = white
+				play_sound(snd_jingle.addr)
+			}
+			if input_dy > 0 {
+				vic_border = yellow
+				play_sound(snd_hurry_up.addr)
+			}
+			if input_dy < 0 {
+				vic_border = green
+				//play_sound(snd_scoring.addr)
+			}
+		}
+		
+	}
+}
+
+void wait_frame() {
+	while vic_raster != $ff {}
+}
+

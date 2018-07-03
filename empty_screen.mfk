@@ -1,0 +1,34 @@
+
+void clear_screen() {
+	byte i
+	for i,0,paralleluntil,250 {
+		screen[000+i] = 32
+	}
+	pointer p
+	p = screen + 240
+	byte x
+	byte c
+	for i,0,paralleluntil,25-6 {
+		c = rand() & $f
+		for x,0,until,40 {
+			p[x] = ((c + x) & $f) | $60
+		}
+		p += 40
+	}
+	for i,0,paralleluntil,5 {
+		screen[75+i] = txt_score[i]
+		screen[35+i] = txt_fuel[i]
+		c64_color_ram[35+i] = white
+		c64_color_ram[75+i] = white
+	}
+	for i,0,paralleluntil,8 {
+		c64_color_ram[75-9+i] = white
+	}
+	
+	display_score()
+	display_fuel()
+}
+
+array txt_score = "score" scr
+array txt_fuel = " fuel" scr
+

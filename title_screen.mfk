@@ -1,0 +1,111 @@
+
+const byte card_y = $63
+
+word title_sprite_pos
+
+void show_title_screen() {
+	byte i
+	for i,0,paralleluntil,250 {
+		screen[000+i] = 32
+		screen[250+i] = 32
+		screen[500+i] = 32
+		screen[750+i] = 32
+		c64_color_ram[000+i] = white
+		c64_color_ram[250+i] = white
+		c64_color_ram[500+i] = white
+		c64_color_ram[750+i] = white
+	}
+	title_sprite_pos = 0
+	vic_spr_exp_y = $ff
+	vic_spr_exp_x = 1
+	vic_spr_color[0] = cyan
+	vic_spr_color[1] = red
+	vic_spr_color[2] = black
+	vic_spr_color[3] = red
+	vic_spr_color[4] = black
+	vic_spr_color[5] = red
+	sprite_pointers[0] = t_bike + standard_sprite_base_pointer
+	sprite_pointers[1] = card_sprite_base_pointer + 1
+	sprite_pointers[2] = card_sprite_base_pointer + 2
+	sprite_pointers[3] = card_sprite_base_pointer + 3
+	sprite_pointers[4] = card_sprite_base_pointer + 4
+	sprite_pointers[5] = card_sprite_base_pointer + 5
+	draw_card_to_sprite(card_sprite_base_pointer + 1, rank_a | suit_s)
+	draw_card_to_sprite(card_sprite_base_pointer + 2, rank_k | suit_h)
+	draw_card_to_sprite(card_sprite_base_pointer + 3, rank_q | suit_d)
+	draw_card_to_sprite(card_sprite_base_pointer + 4, rank_j | suit_c)
+	draw_card_to_sprite(card_sprite_base_pointer + 5, rank_t | suit_h)
+	vic_spr0_y = 162
+	vic_spr1_y = card_y ^ 4 
+	vic_spr2_y = card_y
+	vic_spr3_y = card_y ^ 4 
+	vic_spr4_y = card_y
+	vic_spr5_y = card_y ^ 4 
+	vic_spr1_x = 105
+	vic_spr2_x = 135
+	vic_spr3_x = 165
+	vic_spr4_x = 195
+	vic_spr5_x = 225
+	vic_spr_ena = $3f
+	
+	for i,0,paralleluntil,txt_title.length {
+		screen[94+i] = txt_title[i]
+	}
+	for i,0,paralleluntil,txt_copyright.length {
+		screen[172+i] = txt_copyright[i]
+	}
+	for i,0,paralleluntil,txt_hiscore.length {
+		screen[811+i] = txt_hiscore[i]
+	}
+	for i,0,paralleluntil,txt_press_fire.length {
+		screen[900 - (txt_press_fire.length >> 1) + i] = txt_press_fire[i]
+	}	
+	display_hi_score()
+	
+	// wait for the fire button to be depressed, so a single press after game over won't skip the title screen
+	while input_btn != 0 {
+		title_screen_frame()
+	}
+	while input_btn == 0 {
+		title_screen_frame()
+	}
+}
+
+void title_screen_frame() {
+	wait_frame()
+	handle_input()
+	title_sprite_pos += 2
+	if title_sprite_pos >= 480 { title_sprite_pos = 0 }
+	vic_spr_hi_x = title_sprite_pos.hi
+	vic_spr0_x = title_sprite_pos.lo
+	if title_sprite_pos.lo & $1f == 0 {
+		vic_spr1_y ^= 4
+		vic_spr2_y ^= 4
+		vic_spr3_y ^= 4
+		vic_spr4_y ^= 4
+		vic_spr5_y ^= 4
+	}
+}
+
+
+const pointer hi_score_area = screen.addr + 811 + 11
+
+array txt_title = "space  poker" scr
+
+array txt_press_fire = "press fire to start" scr
+
+array txt_copyright = "by karol stasiak" scr
+
+array txt_hiscore = "hi score:  00000000" scr
+
+void hi_put_dec_byte(byte at, byte b) {
+	hi_score_area[at+1] = (b & $f) | $30
+	hi_score_area[at] = ((b >> 4) & $f) | $30
+}
+
+void display_hi_score() {
+	hi_put_dec_byte(6, hi_score.b0)
+	hi_put_dec_byte(4, hi_score.b1)
+	hi_put_dec_byte(2, hi_score.b2)
+	hi_put_dec_byte(0, hi_score.b3)
+}

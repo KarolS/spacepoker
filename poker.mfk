@@ -1,0 +1,108 @@
+
+
+const byte suit_s = 0
+const byte suit_h = 1
+const byte suit_c = 2
+const byte suit_d = 3
+const byte rank_2 = 0 << 2
+const byte rank_3 = 1 << 2
+const byte rank_4 = 2 << 2
+const byte rank_5 = 3 << 2
+const byte rank_6 = 4 << 2
+const byte rank_7 = 5 << 2
+const byte rank_8 = 6 << 2
+const byte rank_9 = 7 << 2
+const byte rank_t = 8 << 2
+const byte rank_j = 9 << 2
+const byte rank_q = 10 << 2
+const byte rank_k = 11 << 2
+const byte rank_a = 12 << 2
+
+array hand[5]
+byte hand_size
+
+array had_suits[4]
+array had_ranks[13]
+array had_counts[6]
+
+inline void __recalculate_hand() {
+	byte i
+	for i,0,paralleluntil,4 {
+		had_suits[i] = 0
+	}
+	for i,0,paralleluntil,13 {
+		had_ranks[i] = 0
+	}
+	for i,0,paralleluntil,5 {
+		had_ranks[(hand[i]>>2)&$f] += 1
+		had_suits[hand[i]&3] += 1
+	}
+}
+inline void __count_suit_groupings() {
+	byte i
+	for i,0,paralleluntil,6 {
+		had_counts[i] = 0
+	}
+	for i,0,paralleluntil,4 {
+		had_counts[had_suits[i]] += 1
+	}	
+}
+inline void __count_rank_groupings() {
+	byte i
+	for i,0,paralleluntil,6 {
+		had_counts[i] = 0
+	}
+	for i,0,paralleluntil,13 {
+		had_counts[had_ranks[i]] += 1
+	}	
+}
+inline byte __calculate_spread() {
+	byte i
+	byte min
+	byte max
+	for i,0,until,13 {
+		if had_ranks[i] != 0 { max = i }
+	}	
+	for i,12,downto,0 {
+		if had_ranks[i] != 0 { min = i }
+	}
+	return max - min
+}
+byte get_hand_type() {
+	__recalculate_hand()
+	__count_rank_groupings()
+	if had_counts[5] != 0 {
+		return h_5ofakind
+	}
+	if had_counts[4] != 0 {
+		return h_4ofakind
+	}
+	if had_counts[3] != 0 {
+		if had_counts[2] != 0 { return h_fullhouse } 
+		return h_3ofakind
+	}
+	if had_counts[2] != 0 {
+		return had_counts[2] // 1=h_pair, 2=h_2pairs
+	}
+	__count_suit_groupings()
+	if __calculate_spread() == 4 {
+		if had_counts[5] != 0 {
+			return h_straightflush
+		}
+		return h_straight
+	} else if had_counts[5] != 0 {
+		return h_flush
+	}
+	return h_nothing
+}
+
+const byte h_nothing = 0
+const byte h_pair = 1
+const byte h_2pairs = 2
+const byte h_3ofakind = 3
+const byte h_straight = 4
+const byte h_flush = 5
+const byte h_fullhouse = 6
+const byte h_4ofakind = 7
+const byte h_straightflush = 8
+const byte h_5ofakind = 9

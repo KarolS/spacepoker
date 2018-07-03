@@ -1,0 +1,113 @@
+
+inline void init_game() {
+	hand_size = 0
+	score = 0
+	// fuel = $ff
+	fuel = max_fuel_hi:$ff
+	bike_direction = 0
+	byte i
+	for i,0,paralleluntil,8 {
+		o_types[i] = 0
+		o_flying_y[i] = 0
+	}
+	o_types[0] = 1
+	o_lane[0] = max_lane >> 1
+	o_position_lo[0] = 0
+	o_position_hi[0] = 0
+	bike_progress = 0
+	clear_screen()
+	draw_card_to_sprite(8, 0)
+	spawn_countdown = 5
+	game_speed = 2
+	countdown_until_acceleration = cards_per_stage
+	animation_countdown = 0
+	is_game_over = 0
+	init_sound()
+}
+
+const byte cards_per_stage = 40
+
+word spawn_countdown
+byte game_speed
+byte countdown_until_acceleration
+byte is_game_over
+
+void update_screen() {
+	byte i
+	//vic_border = red
+	handle_input()
+	move_objects()
+	//vic_border = orange
+	calculate_sprites()
+	//vic_border = blue
+	//vic_border = green
+	if is_game_over == 0 {		
+		check_and_process_hand()
+		fuel -= game_speed
+		if fuel == 0 || fuel.hi == $ff {
+			fuel = 0
+			game_over()
+		}
+		display_fuel()
+	}
+	if animation_countdown != 0 {
+		animation_countdown -= 1
+		animate_hand_color()
+	}
+	spawn_countdown -= game_speed
+	if spawn_countdown < game_speed {
+		spawn_object(get_random_card(), get_random_lane())
+		spawn_countdown = nonet(((rand() & $1F) + ((rand() & $F) + 10) * game_speed) << 1)
+		if is_game_over == 0 && game_speed < 8 {
+			countdown_until_acceleration -= 1
+			if countdown_until_acceleration == 0 {
+				game_speed += 1
+				play_sound(snd_hurry_up.addr)
+				for i,0,paralleluntil,16 {
+					screen[hand_message_offset+i] = txt_acceleration[i]
+				}
+				animation_countdown = 100
+				countdown_until_acceleration = cards_per_stage
+			}
+		}
+	}
+	//vic_border = purple
+	asm {
+		lda charset.addr+$300
+		asl
+		rol charset.addr+$378
+		rol charset.addr+$370
+		rol charset.addr+$368
+		rol charset.addr+$360
+		rol charset.addr+$358
+		rol charset.addr+$350
+		rol charset.addr+$348
+		rol charset.addr+$340
+		rol charset.addr+$338
+		rol charset.addr+$330
+		rol charset.addr+$328
+		rol charset.addr+$320
+		rol charset.addr+$318
+		rol charset.addr+$310
+		rol charset.addr+$308
+		rol charset.addr+$300		
+	}
+	//vic_border = black
+}
+
+array txt_acceleration = "let's go faster!" scr
+
+void game_over() {
+	is_game_over = 1
+	if hi_score < score {
+		hi_score = score
+	}
+	o_types[0] = t_explosion
+	game_over_message_offset = 0
+	animation_countdown = 0
+	animate_hand_color()
+	play_sound(snd_explosion.addr)
+}
+
+
+

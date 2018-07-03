@@ -1,0 +1,102 @@
+const byte off = $7f
+
+byte sound_countdown
+word sound_pointer
+array sid[$19] @$d400
+
+inline void init_sound() {
+	sound_countdown = off
+	sound_pointer = snd_jingle.addr + snd_jingle.length - 1 // silence
+	byte i
+	for i,0,paralleluntil,$18 {
+		sid[i] = 0
+	}
+	poke($d418, $f)
+}
+
+void sound_engine_frame() {
+	byte delta
+	if sound_countdown != off {
+		if sound_countdown != 0 {
+			sound_countdown -= 1
+		} else {
+			sound_countdown:delta = run_sound_command(sound_pointer)
+			sound_pointer += delta
+		}
+	}
+}
+
+void play_sound(word addr) {
+	sound_pointer = addr
+	sound_countdown = 0
+}
+
+array snd_explosion = [
+	7, 5, 
+	8, 5,
+	$c, $12,
+	$d, $ad,
+	$b, $81,
+	$80 + 25,
+	
+	$b, $80,	
+	$ff
+]
+
+array snd_jingle = [
+	$b, $10,
+	$a, 8,
+	7, $22, 
+	8, $22,
+	$c, $11,
+	$d, $e3,
+	$b, $11,
+	$80 + 2,
+	
+	7, $33, 
+	8, $33,
+	$80 + 2,
+		
+	$b, $10,	
+	$ff
+]
+
+const word note_h = $20ae
+
+array snd_hurry_up = [
+	$a, 8,
+	$b, $10,
+	7, note_h.lo,
+	8, note_h.hi,
+	$c, $00,
+	$d, $e0,
+	
+	$b, $11,
+	$80 + 8,
+	
+	$b, $10,
+	$80 + 3,
+	
+	$b, $11,
+	$80 + 8,
+	
+	$b, $10,
+	$80 + 3,
+	
+	$b, $11,
+	$80 + 8,
+	
+	$b, $10,
+	$ff
+	
+]
+
+word run_sound_command(pointer p) {
+	byte delta
+	delta = 0
+	while p[delta] & $80 == 0 {
+		sid[p[delta]] = p[delta+1]
+		delta += 2
+	}
+	return (p[delta]&$7f):(delta+1)
+}
