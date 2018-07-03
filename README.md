@@ -2,11 +2,11 @@
 
 Game released for the 2018 Reset64 4KB 'Craptastic' Game Competition.
 
-![](./shot1.png) ![](./shot2.png)
+![](./src/shot1.png) ![](./src/shot2.png)
 
 ## Download
 
-[D64 image](spacepoker.d64)
+[D64 image](./src/spacepoker.d64)
 
 [Get all the games from the compo](https://reset64-magazine.itch.io/2018-reset64-4kb-craptastic-game-compo)
 
